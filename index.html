@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Night of Nights</title>
+    
+    <!-- 📱 ホーム画面に追加（アプリ化）のための設定 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ナイト・オブ・ナイツ">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <style>
+        /* 画面全体を完全に真っ黒にする */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 案内文字の設定（中央表示・1秒で消える） */
+        #guide-text {
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            opacity: 1;
+            transition: opacity 1s ease;
+            position: absolute;
+            z-index: 10;
+        }
+
+        /* 🕒 薄く表示される時計の設定 */
+        #clock {
+            color: #111111; /* ⚠️有機ELの焼き付きを防ぐ、超極薄のグレー */
+            font-size: 48px;
+            font-weight: 200;
+            letter-spacing: 4px;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 案内文字（1回タップすると1秒でスッと消えます） -->
+    <div id="guide-text">画面をタップ</div>
+
+    <!-- 超極薄の時計 -->
+    <div id="clock">00:00:00</div>
+
+    <!-- 音声ファイル（mp3） -->
+    <audio id="bgm" src="真っ黒ナイト・オブ・ナイツ.mp3" loop></audio>
+
+    <script>
+        const bgm = document.getElementById('bgm');
+        const guideText = document.getElementById('guide-text');
+        const clockEl = document.getElementById('clock');
+
+        // バックグラウンド再生の通知欄設定
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({ title: 'ナイト・オブ・ナイツ' });
+        }
+
+        // 🕒 時計をリアルタイムで動かす機能
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            clockEl.textContent = `${hours}:${minutes}:${seconds}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock(); // 起動時にすぐ表示
+
+        // 🖱️ タップとダブルタップの判定
+        let lastTap = 0;
+
+        document.body.addEventListener('click', (e) => {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+
+            // 案内文字を1秒かけて消す処理（最初の1回のみ）
+            if (guideText) {
+                guideText.style.opacity = '0';
+                setTimeout(() => guideText.remove(), 1000);
+            }
+
+            // 🛑 ダブルタップ（300ミリ秒以内の連続タップ）の処理：一時停止/再開
+            if (tapLength < 300 && tapLength > 0) {
+                if (!bgm.paused) {
+                    bgm.pause();
+                } else {
+                    bgm.play().catch(err => console.log(err));
+                }
+                e.preventDefault(); // ダブルタップ時のスマホ固有のズームを防止
+            } else {
+                // 🎵 通常の1回タップ処理：再生スタート
+                if (bgm.paused) {
+                    bgm.play().catch(err => console.log(err));
+                }
+            }
+            lastTap = currentTime;
+        });
+    </script>
+</body>
+</html>
